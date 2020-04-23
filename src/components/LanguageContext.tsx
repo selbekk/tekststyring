@@ -1,12 +1,13 @@
 import React from "react";
 import useSWR from "swr";
-import { getTexts, AppTextsType } from "../api";
-import { Spinner, Flex } from "@chakra-ui/core";
+import * as api from "../api";
+import { FullPageSpinner } from "./FullPageSpinner";
+import { usePersistedState } from "../hooks/usePersistedState";
 
 type LanguageContextType = {
   language: string;
   changeLanguage: (textKey: string) => void;
-  texts: AppTextsType;
+  texts: api.AppTextsType;
 };
 const LanguageContext = React.createContext<LanguageContextType | null>(null);
 
@@ -15,11 +16,13 @@ type LanguageProviderProps = {
   supportedLanguages: string[];
 };
 export const LanguageProvider: React.FC<LanguageProviderProps> = (props) => {
-  const [currentLanguage, setCurrentLanguage] = React.useState(
+  const [currentLanguage, setCurrentLanguage] = usePersistedState(
+    "language",
     props.defaultLanguage
   );
-  const { data } = useSWR(currentLanguage, () =>
-    getTexts("tekststyring", "production", currentLanguage)
+
+  const { data: texts } = useSWR(currentLanguage, () =>
+    api.getTexts("tekststyring", "production", currentLanguage)
   );
   const contextValue = React.useMemo(
     () => ({
@@ -27,16 +30,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = (props) => {
       changeLanguage: (newLanguage: string) => {
         setCurrentLanguage(newLanguage);
       },
-      texts: data as AppTextsType,
+      texts: texts as api.AppTextsType,
     }),
-    [data, currentLanguage]
+    [texts, currentLanguage, setCurrentLanguage]
   );
-  if (!data) {
-    return (
-      <Flex minHeight="100vh" justifyContent="center" alignItems="center">
-        <Spinner>Henter tekster</Spinner>
-      </Flex>
-    );
+  if (!texts) {
+    return <FullPageSpinner />;
   }
   return <LanguageContext.Provider value={contextValue} {...props} />;
 };
@@ -46,7 +45,8 @@ export const useTexts = () => {
   if (!context) {
     throw new Error("Du må wrappe appen din i en LanguageProvider-komponent");
   }
-  return (key: string) => context.texts[key] || `UKNOWN PROPERTY ${key}`;
+  return (key: string) =>
+    context.texts[key] || `💥 UNKNOWN PROPERTY "${key}" 💥`;
 };
 
 export const useLanguage = () => {
