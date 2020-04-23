@@ -1,15 +1,21 @@
 import React from "react";
-import { Text, Box, Heading } from "@chakra-ui/core";
-import { Link } from "react-router-dom";
+import { Text, Box, Heading, Button } from "@chakra-ui/core";
+import { useTexts, useLanguage } from "../components/LanguageContext";
 
 export const LandingPage: React.FC = () => {
+  const t = useTexts();
+  const [language, changeLanguage] = useLanguage();
   return (
     <Box>
-      <Heading>Velkommen til tekststyring!</Heading>
-      <Text>
-        Her er det ikke så mye lenger. Men du kan jo{" "}
-        <Link to="/apper">velge en app</Link>?
-      </Text>
+      <Heading>{t("landingPage.heading")}</Heading>
+      <Text>{t("landingPage.description")}</Text>
+      <Button
+        variant="solid"
+        variantColor="green"
+        onClick={() => changeLanguage(language === "en" ? "nb" : "en")}
+      >
+        {t("landingPage.chooseLanguage.button")}
+      </Button>
     </Box>
   );
 };
